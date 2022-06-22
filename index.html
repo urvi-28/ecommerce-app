@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eSHOP</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@200&display=swap" rel="stylesheet"> 
+    <link rel="icon" type="image/png" href="images/favicon.png" />
+
+    <script></script>
+    <script type="text/javascript" src="js/app.js" defer></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <!-- <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1148.0.min.js"></script> -->
+    <script src="js/amazon-cognito-auth.min.js"></script>
+
+    <script src="https://rawgit.com/aws/amazon-cognito-identity-js/master/dist/aws-cognito-sdk.min.js"></script>
+    <script src="https://rawgit.com/aws/amazon-cognito-identity-js/master/dist/amazon-cognito-identity.min.js"></script>
+    <!-- <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1147.0.min.js"></script> -->
+    <!-- <script src="/Users/sharurvi/Documents/E-commerce/Website/node_modules/amazon-cognito-identity-js/dist/amazon-cognito-identity.min.js"></script>-->
+    <script src="js/config.js"></script>
+    <script>
+        window.addEventListener('load', fetchProducts, false);
+        function generateStringFromArray(arr) {
+            let str = "";
+            arr.forEach((a) => {
+                str += `${a.S} `;
+            });
+            return str;
+        }
+
+        async function fetchProducts() {
+            console.log("Fetch Products executed");
+            let url = `https://yszluxm1vb.execute-api.us-west-2.amazonaws.com/dev/getproducts`;
+            axios(url, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    // 'Authorization': `Bearer ${accessToken}`
+                },
+            })
+                .then((response) => {
+                    // console.log(JSON.parse(data));
+                    let data = response.data
+                    console.log(data)
+                    let productDiv = document.getElementById("productList");
+                    let ht = ``;
+                    data.forEach((product) => {
+                        console.log("product", product);
+                        console.log(product.ID +')', product.Name);
+                        ht += ` <div class="col-4">
+                    <img src=${product.Image_url} alt="" />
+                            <h4>${product.Name
+                                ? product.Name
+                                : "Not Available"
+                            }</h4>
+                            <div class="rating">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="far fa-star"></i>
+                            </div>
+                        <p>${product.Color
+                                ? product.Color
+                                : product.Color
+                                    ? generateStringFromArray(product.Color)
+                                    : "Not Available"
+                            }</p>
+                            <p>${product.Price}</p>
+                <a href="" class="btn">Add to Cart</a>
+                    </div>`;
+                    });
+                    productDiv.innerHTML = ht;
+                })
+                .catch((error) => {
+                    console.log(error);
+                    console.log("This is the error block");
+                });
+        }
+    </script>
+
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="container">
+            <div class="navbar">
+                <div class="logo">
+                    <a href="index.html"><img src="images/logo1.png" width="125px"></a>
+                </div>
+
+                <!-- <input type="text" class="form-control" placeholder="Search here..." id="searchInput" name="searchInput">
+                <button onClick="fetchData()">
+                    <i class="fa fa-search" aria-hidden="true"></i>
+                </button> -->
+
+                <!-- <from class="search_form">
+                    <input type="text" class="form-control" placeholder="Search here..." id="searchInput" name="searchInput">
+                    <button class="" onClick="fetchData()">
+                        <i class="fa fa-search" aria-hidden="true"></i>
+                    </button>
+                </from> -->
+                <li class="searchbar">
+                    <input type="text" class="form-control" placeholder="Search here..." id="searchInput"
+                        name="searchInput">
+                    <button class="bar" onClick="fetchData()"> <i class="fa fa-search" aria-hidden="true"> </i></button>
+                </li>
+                <nav>
+                    <ul id="MenuItems">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="products.html">Products</a></li>
+                        <li><a href="account.html">Account</a></li>
+                        <!-- <li><a href="register.html">Register</a></li> -->
+                        <li id="logoutButton"></li>
+                        <li id="loginButton" onclick="login()"><a href="account.html">Login</a></li>
+
+                        <!-- <li><a href="https://cogdemo.auth.us-west-2.amazoncognito.com/login?client_id=1jd2iiedv41jo7dnad8cs8hj40&response_type=token&scope=email+openid+profile&redirect_uri=https://d1geeky8c4tc0u.cloudfront.net/products.html">Login</a></li> -->
+                        <!-- <li><a href="https://cogdemo.auth.us-west-2.amazoncognito.com/logout?client_id=1jd2iiedv41jo7dnad8cs8hj40&logout_uri=https://d1geeky8c4tc0u.cloudfront.net/index.html">Logout</a></li> -->
+                        <!-- <li><a href="https://cogdemo.auth.us-west-2.amazoncognito.com/login?client_id=1jd2iiedv41jo7dnad8cs8hj40&response_type=token&scope=email+openid+profile&redirect_uri=file:///Users/sharurvi/Documents/E-commerce/Website/products.html">Login</a></li>
+                        <li><a href="https://cogdemo.auth.us-west-2.amazoncognito.com/logout?client_id=1jd2iiedv41jo7dnad8cs8hj40&logout_uri=file:///Users/sharurvi/Documents/E-commerce/Website/index.html">Logout</a></li> -->
+                    </ul>
+                </nav>
+                <a href="cart.html"><img src="images/cart.png" width="30px height=" 30px alt=""></a>
+                <img src="images/menu.png" class="menu-icon" onclick="menutoggle()">
+            </div>
+            <div class="row">
+                <div class="col-2">
+                    <h1>Give yourself<br> a new style</h1>
+                    <p>Some text here</p>
+                    <a href="" class="btn">Explore Now</a>
+                </div>
+                <div class="col-2">
+                    <img src="images/main.png">
+                </div>
+            </div>
+        </div>
+    </div>
+
+   <!-- featured categories  -->
+   <div class="categories">
+        <div class="small-container">
+            <div class="row">
+                <div class="col-3">
+                    <img src="images/category-1.jpg" alt="">
+                </div>
+                <div class="col-3">
+                    <img src="images/category-2.jpg" alt="">
+                </div>
+                <div class="col-3">
+                    <img src="images/category-3.jpg" alt="">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- featured products -->
+    <div class="small-container">
+        <h2 class="title">Featured</h2>
+        <div class="row" id="productList">
+            <!-- <div class="col-4">
+                <a href="product-details.html"><img src="images/T1.jpg" alt=""></a>
+                <a href="product-details.html">
+                    <h4>Mens Tshirt</h4>
+                </a>
+                <div class="rating">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="far fa-star"></i>
+                </div>
+                <p>Rs.400</p>
+                <a href="" class="btn">Add to Cart</a>
+            </div>
+            <div class="col-4">
+                <img src="images/S6.jpg" alt="">
+                <h4>Black Heels</h4>
+                <div class="rating">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="far fa-star"></i>
+                </div>
+                <p>Rs.900</p>
+                <a href="" class="btn">Add to Cart</a>
+            </div>
+            <div class="col-4">
+                <img src="images/A4.jpg" alt="">
+                <h4>Silk Scarf</h4>
+                <div class="rating">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="far fa-star"></i>
+                </div>
+                <p>Rs.250</p>
+                <a href="" class="btn">Add to Cart</a>
+            </div>
+            <div class="col-4">
+                <img src="images/S2.jpg" alt="">
+                <h4>Mens Formal Shoes</h4>
+                <div class="rating">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="far fa-star"></i>
+                    <i class="far fa-star"></i>
+                </div>
+                <p>Rs.1200</p>
+                <a href="" class="btn">Add to Cart</a>
+            </div>
+            <div class="col-4">
+                <img src="images/W3.jpg" alt="">
+                <h4>Fossil Womens Watch</h4>
+                <div class="rating">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="far fa-star"></i>
+                </div>
+                <p>Rs.4000</p>
+                <a href="" class="btn">Add to Cart</a>
+            </div>
+            <div class="col-4">
+                <img src="images/T4.jpg" alt="">
+                <h4>Balenciaga Tshirt</h4>
+                <div class="rating">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="far fa-star"></i>
+                </div>
+                <p>Rs.450</p>
+                <a href="" class="btn">Add to Cart</a>
+            </div> -->
+        </div>
+    </div> -->
+    <!----js for toggle menu--->
+    <!-- <script>
+        var MenuItems = document.getElementById("MenuItems");
+        MenuItems.style.maxHeight = "0px";
+        function menutoggle() {
+            if (MenuItems.style.maxHeight == "0px") {
+                MenuItems.style.maxHeight = "200px"
+            }
+            else {
+                MenuItems.style.maxHeight = "0px"
+            }
+        } -->
+    <!-- //     /*-----product search-------*/
+    / /    function generateStringFromArray(arr) {
+    //         let str = ''
+    //         arr.forEach((a) => {
+    //             str += `${a.S} `
+    //         })
+    //         return str
+    //     }
+    //     async function fetchData() {
+    //         console.log("Fetch Data executed")
+            
+    //         const token = JSON.parse(sessionStorage.getItem('data'));
+    //         let query = document.getElementById('searchInput').value
+    //         let url = ` https://yszluxm1vb.execute-api.us-west-2.amazonaws.com/dev/search?q=${query}`
+    //         axios(url, {
+    //             method: 'GET',
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //                 'Authorization' : `Bearer ${access_token}`
+    //             },
+    //         })
+    //             .then(response => {
+    //                 console.log(response);
+
+    //                 let data = response.data.hits.hits
+    //                 console.log(data);
+    //                 let productDiv = document.getElementById('productList')
+    //                 let ht = ``
+    //                 data.forEach((product) => {
+    //                     console.log("product", product)
+    //                     console.log(product._source.Name.S)
+    //                     ht +=
+    //                         ` <div class="col-4">
+    //             <img src=${product._source.Image_url.S} alt="" />
+    //                     <h4>${product._source.Name.S ? product._source.Name.S : "Not Available"}</h4>
+    //                     <div class="rating">
+    //                         <i class="fas fa-star"></i>
+    //                         <i class="fas fa-star"></i>
+    //                         <i class="fas fa-star"></i>
+    //                         <i class="fas fa-star"></i>
+    //                         <i class="far fa-star"></i>
+    //                     </div>
+    //                 <p>${product._source.Color.S ? product._source.Color.S : (product._source.Color.L ? (generateStringFromArray(product._source.Color.L)) : 'Not Available')}</p>
+    //                 <a href="" class="btn">Add to Cart</a>
+    //             </div>`
+    //                 })
+    //                 productDiv.innerHTML = ht
+    //             }).catch(error => {
+    //                 console.log(error)
+    //                 console.log("This is the error block")
+    //             })
+    //     } 
+    // </script>
+    // <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    // <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1147.0.min.js"></script> -->
+
+
+</body>
+
+</html>
