@@ -1,0 +1,1113 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Search Module
+Resources:
+
+  OpenSearchDomain:
+    Type: AWS::OpenSearchService::Domain
+    Properties:
+      AccessPolicies:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: "*"
+            Action: es:ESHttp*
+            Resource: arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/ecommerce/*
+            Condition:
+              IpAddress:
+                aws:SourceIp: "*"
+      AdvancedOptions:
+        rest.action.multi.allow_explicit_index: true
+      AdvancedSecurityOptions: 
+        Enabled: false
+        InternalUserDatabaseEnabled: false
+      DomainEndpointOptions:
+        EnforceHTTPS: true
+      DomainName: 'ecommerce'
+      EngineVersion: 'OpenSearch_1.0'
+      ClusterConfig:
+        InstanceCount: '1'
+        InstanceType: 't3.small.search'
+      EBSOptions:
+        EBSEnabled: true
+        VolumeSize: '20'
+        VolumeType: 'gp2'
+      NodeToNodeEncryptionOptions:
+        Enabled: true
+
+  ApiGatewayRestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Description: An API Gateway with a Lambda Integration
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      Name: apigateway
+
+  ApiGatewaySearchResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+      PathPart: search
+      RestApiId: !Ref ApiGatewayRestApi
+
+  ApiGatewayCartResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+      PathPart: cart
+      RestApiId: !Ref ApiGatewayRestApi
+
+  ApiGatewayAddToCartResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref ApiGatewayCartResource
+      PathPart: addtocart
+      RestApiId: !Ref ApiGatewayRestApi
+
+  ApiGatewayRemoveFromCartResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref ApiGatewayCartResource
+      PathPart: removefromcart
+      RestApiId: !Ref ApiGatewayRestApi
+
+  ApiGatewayGetCartResource:
+      Type: AWS::ApiGateway::Resource
+      Properties:
+        ParentId: !Ref ApiGatewayCartResource
+        PathPart: getcart
+        RestApiId: !Ref ApiGatewayRestApi
+
+  ApiGatewayFeaturedProductsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+      PathPart: featuredproducts
+      RestApiId: !Ref ApiGatewayRestApi
+
+  ApiGatewayProductCatalogResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+      PathPart: productcatalog
+      RestApiId: !Ref ApiGatewayRestApi
+
+  ApiGatewayMethodforProductCatalogResource:
+    Type: AWS::ApiGateway::Method
+    DeletionPolicy: Retain
+    Properties:
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      HttpMethod: GET
+      Integration:
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        TimeoutInMillis: 29000
+        Type: AWS_PROXY
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProductsCatalogLambda.Arn}/invocations'
+      MethodResponses:
+        - ResponseModels: 
+            application/json : Empty
+          StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+      ResourceId: !Ref ApiGatewayProductCatalogResource
+      RestApiId: !Ref ApiGatewayRestApi
+    DependsOn: LambdaInvokePermissionProductCatalog
+
+  ApiGatewayOptionsMethodforProductCatalogResource:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId: !Ref ApiGatewayRestApi
+      ResourceId: !Ref ApiGatewayProductCatalogResource
+      HttpMethod: OPTIONS
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'*'"
+            method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: Empty
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+      - StatusCode: 200
+        ResponseModels:
+          application/json: Empty
+        ResponseParameters:
+          method.response.header.Access-Control-Allow-Headers: true
+          method.response.header.Access-Control-Allow-Methods: true
+          method.response.header.Access-Control-Allow-Origin: true
+    DependsOn: LambdaInvokePermissionProductCatalog
+
+  ApiGatewayMethodforSearchResource:
+    Type: AWS::ApiGateway::Method
+    DeletionPolicy: Retain
+    Properties:
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      HttpMethod: GET
+      Integration:
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        TimeoutInMillis: 29000
+        Type: AWS_PROXY
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SearchFunctionLambda.Arn}/invocations'
+      MethodResponses:
+      - StatusCode: 200
+        ResponseModels:
+          application/json: 'Empty'
+        ResponseParameters:
+          method.response.header.Access-Control-Allow-Headers: true
+          method.response.header.Access-Control-Allow-Methods: true
+          method.response.header.Access-Control-Allow-Origin: true
+      ResourceId: !Ref ApiGatewaySearchResource
+      RestApiId: !Ref ApiGatewayRestApi
+      RequestModels:
+          application/json: !Ref ApiGatewayModel
+      RequestParameters:
+        method.request.querystring.q: true
+    DependsOn: LambdaInvokePermission
+
+  ApiGatewayOptionsMethodforSearchResource:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId: !Ref ApiGatewayRestApi
+      ResourceId: !Ref ApiGatewaySearchResource
+      HttpMethod: OPTIONS
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: NEVER
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+      - StatusCode: 200
+        ResponseModels:
+          application/json: 'Empty'
+        ResponseParameters:
+          method.response.header.Access-Control-Allow-Headers: true
+          method.response.header.Access-Control-Allow-Methods: true
+          method.response.header.Access-Control-Allow-Origin: true
+    DependsOn: LambdaInvokePermission
+
+  ApiGatewayMethodforFeaturedProductsResource:
+    Type: AWS::ApiGateway::Method
+    DeletionPolicy: Retain
+    Properties:
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      HttpMethod: GET
+      Integration:
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        TimeoutInMillis: 29000
+        Type: AWS_PROXY
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FeaturedProductsLambda.Arn}/invocations'
+      MethodResponses:
+        - ResponseModels: 
+            application/json : Empty
+          StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+      ResourceId: !Ref ApiGatewayFeaturedProductsResource
+      RestApiId: !Ref ApiGatewayRestApi
+
+  OptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId: !Ref ApiGatewayRestApi
+      ResourceId: !Ref ApiGatewayFeaturedProductsResource
+      HttpMethod: OPTIONS
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'*'"
+            method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+      - StatusCode: 200
+        ResponseModels:
+          application/json: 'Empty'
+        ResponseParameters:
+          method.response.header.Access-Control-Allow-Headers: true
+          method.response.header.Access-Control-Allow-Methods: true
+          method.response.header.Access-Control-Allow-Origin: true
+
+  ApiGatewayMethodforAddToCartResource:
+      Type: AWS::ApiGateway::Method
+      DeletionPolicy: Retain
+      Properties:
+        ApiKeyRequired: false
+        AuthorizationType: NONE
+        HttpMethod: POST
+        Integration:
+          IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ''
+          IntegrationHttpMethod: POST
+          PassthroughBehavior: WHEN_NO_MATCH
+          TimeoutInMillis: 29000
+          Type: AWS_PROXY
+          Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AddToCartLambda.Arn}/invocations'
+        MethodResponses:
+          - ResponseModels: 
+              application/json : Empty
+            StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: true
+              method.response.header.Access-Control-Allow-Methods: true
+              method.response.header.Access-Control-Allow-Origin: true
+        ResourceId: !Ref ApiGatewayAddToCartResource
+        RestApiId: !Ref ApiGatewayRestApi
+
+  ApiGatewayOptionsMethodforAddToCartResource:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId: !Ref ApiGatewayRestApi
+      ResourceId: !Ref ApiGatewayAddToCartResource
+      HttpMethod: OPTIONS
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'*'"
+            method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+      - StatusCode: 200
+        ResponseModels:
+          application/json: 'Empty'
+        ResponseParameters:
+          method.response.header.Access-Control-Allow-Headers: true
+          method.response.header.Access-Control-Allow-Methods: true
+          method.response.header.Access-Control-Allow-Origin: true
+
+  ApiGatewayMethodforGetCartResource:
+    Type: AWS::ApiGateway::Method
+    DeletionPolicy: Retain
+    Properties:
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      HttpMethod: GET
+      Integration:
+        # ConnectionType: INTERNET
+        # Credentials: !GetAtt ApiGatewayIamRole.Arn
+        IntegrationHttpMethod: GET
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        TimeoutInMillis: 29000
+        Type: AWS_PROXY
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetCartLambda.Arn}/invocations'
+      MethodResponses:
+        - ResponseModels: 
+            application/json : Empty
+          StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+      ResourceId: !Ref ApiGatewayGetCartResource
+      RestApiId: !Ref ApiGatewayRestApi
+
+  ApiGatewayOptionsMethodforGetCartResource:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId: !Ref ApiGatewayRestApi
+      ResourceId: !Ref ApiGatewayGetCartResource
+      HttpMethod: OPTIONS
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'*'"
+            method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+      - StatusCode: 200
+        ResponseModels:
+          application/json: 'Empty'
+        ResponseParameters:
+          method.response.header.Access-Control-Allow-Headers: true
+          method.response.header.Access-Control-Allow-Methods: true
+          method.response.header.Access-Control-Allow-Origin: true
+
+  ApiGatewayMethodforRemoveFromCartResource:
+    Type: AWS::ApiGateway::Method
+    DeletionPolicy: Retain
+    Properties:
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      HttpMethod: POST
+      Integration:
+        IntegrationHttpMethod: POST
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        TimeoutInMillis: 29000
+        Type: AWS_PROXY
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RemoveFromCartLambda.Arn}/invocations'
+      MethodResponses:
+        - ResponseModels: 
+            application/json : Empty
+          StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+      ResourceId: !Ref ApiGatewayRemoveFromCartResource
+      RestApiId: !Ref ApiGatewayRestApi
+
+  ApiGatewayOptionsMethodforRemoveFromCartResource:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId: !Ref ApiGatewayRestApi
+      ResourceId: !Ref ApiGatewayRemoveFromCartResource
+      HttpMethod: OPTIONS
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'*'"
+            method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+      - StatusCode: 200
+        ResponseModels:
+          application/json: 'Empty'
+        ResponseParameters:
+          method.response.header.Access-Control-Allow-Headers: true
+          method.response.header.Access-Control-Allow-Methods: true
+          method.response.header.Access-Control-Allow-Origin: true
+
+  ApiGatewayOptionsMethodforCartResource:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId: !Ref ApiGatewayRestApi
+      ResourceId: !Ref ApiGatewayCartResource
+      HttpMethod: OPTIONS
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'*'"
+            method.response.header.Access-Control-Allow-Methods: "'OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+      - StatusCode: 200
+        ResponseModels:
+          application/json: 'Empty'
+        ResponseParameters:
+          method.response.header.Access-Control-Allow-Headers: true
+          method.response.header.Access-Control-Allow-Methods: true
+          method.response.header.Access-Control-Allow-Origin: true
+
+
+  ApiGatewayModel:
+    Type: AWS::ApiGateway::Model
+    Properties:
+      ContentType: 'application/json'
+      RestApiId: !Ref ApiGatewayRestApi
+      Schema: {}
+
+  ApiGatewayStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      DeploymentId: !Ref ApiGatewayDeployment
+      Description: Lambda API Stage DEV
+      RestApiId: !Ref ApiGatewayRestApi
+      StageName: 'dev'
+
+  ApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DeletionPolicy: Retain
+    DependsOn: ApiGatewayMethodforSearchResource
+    Properties:
+      Description: Lambda API Deployment
+      RestApiId: !Ref ApiGatewayRestApi
+
+  DynamoDBProductDatabase:
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      AttributeDefinitions: 
+        - AttributeName: "ID"
+          AttributeType: "S"
+      BillingMode: PAY_PER_REQUEST
+      KeySchema: 
+        - AttributeName: ID
+          KeyType: HASH
+      PointInTimeRecoverySpecification: 
+          PointInTimeRecoveryEnabled: true
+      SSESpecification: 
+          SSEEnabled: false
+      StreamSpecification: 
+          StreamViewType: NEW_IMAGE
+      TableClass: STANDARD
+      TableName: ProductDatabase
+  
+  S3BucketforLambdaCode:
+    Type: AWS::S3::Bucket
+    Description: S3 bucket storing lambda function
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-searchfunctionbucket
+      BucketEncryption: 
+        ServerSideEncryptionConfiguration: 
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+  
+  SearchFunctionLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref S3BucketforLambdaCode
+        S3Key: search.zip
+      Description: To forward search requests from search api gateway to OpenSearch
+      FunctionName: SearchFunctionLambda
+      Handler: search.lambda_handler
+      MemorySize: 256
+      Role: !GetAtt SearchRole.Arn
+      Runtime: python3.9
+      Timeout: 60
+    DependsOn: S3BucketforLambdaCode
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref SearchFunctionLambda
+      Action: "lambda:InvokeFunction"
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/*/GET/search"
+
+  SearchRole:
+    Type: AWS::IAM::Role
+    Description: Role for Process Search Request Lambda Function
+    Properties:
+      RoleName: SearchRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess
+        - arn:aws:iam::aws:policy/AmazonOpenSearchServiceFullAccess
+
+  StoreAndUpdateLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref S3BucketforLambdaCode
+        S3Key: storeandupdate.zip
+      Description: To forward search requests from search api gateway to OpenSearch
+      FunctionName: StoreAndUpdateLambda
+      Handler: storeandupdate.lambda_handler
+      MemorySize: 256
+      Role: !GetAtt StoreAndUpdateLambdaRole.Arn
+      Runtime: python3.9
+      Timeout: 60
+    DependsOn: S3BucketforLambdaCode
+
+  StoreAndUpdateLambdaRole:
+    Type: AWS::IAM::Role
+    Description: Role for Process Search Request Lambda Function
+    Properties:
+      RoleName: StoreAndUpdateLambdaRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaDynamoDBExecutionRole
+        - arn:aws:iam::aws:policy/AmazonOpenSearchServiceFullAccess
+        - arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+      Policies:
+        - PolicyName: StoreAndUpdateLambdaRolePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow #allow to write logs to cloudwatch
+              Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              Resource: arn:aws:logs:*:*:*
+            - Effect: Allow #allow lambda to read from the event stream
+              Action:
+              - dynamodb:DescribeStream
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:ListStreams
+              Resource: "*"
+        - PolicyName: Policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow #allow to write logs to cloudwatch
+              Action:
+              - es:ESHttpPost
+              Resource: "arn:aws:es:us-west-2:697049524729:domain/ecommerce/*"
+             
+  ProductCatalogDynamoDBTableStream:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      # The maximum number of DB items to send to Lambda
+      BatchSize: 1  # It can be changed based on the need
+      Enabled: True
+      EventSourceArn: !GetAtt DynamoDBProductDatabase.StreamArn
+      FunctionName: !GetAtt StoreAndUpdateLambda.Arn
+      # Always start at the tail of the Stream
+      StartingPosition: LATEST
+
+  ProductsCatalogLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code: 
+        ZipFile: |
+          const AWS = require("aws-sdk");
+          AWS.config.update({
+            region: "us-west-2", //enter you region name
+          });
+          const db = new AWS.DynamoDB.DocumentClient();
+          exports.handler = async (event) => {
+            console.log("Event: ", event);
+                  var params = {
+                      TableName: 'ProductDatabase',
+                      Limit: 20,
+                  };
+                  var result = await db.scan(params).promise()
+                  console.log(result)
+                  const shuffled = result.Items.sort(() => 0.5 - Math.random());
+                  let selected = shuffled.slice(0, 20);
+                  console.log('selected', selected)
+                  return {
+                    statusCode: 200,
+                    headers: {"Access-Control-Allow-Origin": '*'},
+                    body: JSON.stringify(selected),
+                };
+          }
+      Description: To forward search requests from search api gateway to OpenSearch
+      FunctionName: ProductsCatalogLambda
+      Handler: index.handler
+      MemorySize: 256
+      Role: !GetAtt ProductsCatalogLambdaRole.Arn
+      Runtime: nodejs12.x
+      Timeout: 600
+    DependsOn: S3BucketforLambdaCode
+
+  ProductsCatalogLambdaRole:
+    Type: AWS::IAM::Role
+    Description: Role for 'Products Catalog' Lambda Function
+    Properties:
+      RoleName: ProductsCatalogLambdaRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+
+  LambdaInvokePermissionProductCatalog:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ProductsCatalogLambda
+      Action: "lambda:InvokeFunction"
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/*/GET/productcatalog"
+
+  DynamoDBCartDetails:
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      AttributeDefinitions: 
+        - AttributeName: "UserID"
+          AttributeType: "S"
+      BillingMode: PAY_PER_REQUEST
+      KeySchema: 
+        - AttributeName: UserID
+          KeyType: HASH
+      PointInTimeRecoverySpecification: 
+          PointInTimeRecoveryEnabled: true
+      SSESpecification: 
+          SSEEnabled: false
+      TableClass: STANDARD
+      TableName: CartDetails
+
+  AddToCartLambdaRole:
+    Type: AWS::IAM::Role
+    Description: Role for 'Add to Cart' Lambda Function
+    Properties:
+      RoleName: AddToCartLambdaRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess
+        - arn:aws:iam::aws:policy/AmazonOpenSearchServiceFullAccess
+
+  AddToCartLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          const AWS = require("aws-sdk");
+          AWS.config.update({
+            region: "us-west-2",
+          });
+          const db = new AWS.DynamoDB.DocumentClient();
+          exports.handler = async (event) => {
+            console.log("Event:", event);
+            let response = {};
+            try {
+
+              let reqBody = JSON.parse(event.body);
+              console.log('request body',reqBody);
+              let UserID = reqBody.UserID
+              let productId = reqBody.productId 
+              console.log({UserID},{productId});
+              
+              let params = {
+                TableName: "CartDetails",
+                Key: {
+                  UserID,
+                },
+              };
+              console.log('params',params);
+              
+              let doc = await db.get(params).promise();
+              console.log(doc);
+              let cartItems = new Array();
+              if (doc) {
+                cartItems = doc.Item.Products;
+              }
+              if (!cartItems.includes(productId)) {
+                cartItems.push(productId);
+              }
+              let updateParams = {
+                TableName: "CartDetails",
+                Key: {
+                  UserID: UserID,
+                },
+                UpdateExpression: "set Products = :t",
+                ExpressionAttributeValues: {
+                  ":t": cartItems,
+                },
+              };
+              await db.update(updateParams).promise();
+              response = {
+                statusCode: 200,
+                headers: {
+                  
+                  "Access-Control-Allow-Origin": "*",
+                  
+              },
+                body: "Successful",
+              };
+            } catch (error) {
+              console.log(error);
+              response = {
+                statusCode: 500,
+                headers: {
+                  
+                  "Access-Control-Allow-Origin": "*",
+                  
+                },
+                body: JSON.stringify(error),
+              };
+            }
+            return response;
+          };
+      Description: To add items to the cart i.e., CartDetails table
+      FunctionName: AddToCartLambda
+      Handler: index.handler
+      MemorySize: 256
+      Role: !GetAtt AddToCartLambdaRole.Arn
+      Runtime: nodejs12.x
+      Timeout: 60
+
+  LambdaInvokePermissionAddToCart:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AddToCartLambda
+      Action: "lambda:InvokeFunction"
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/*/POST/addtocart"
+
+  RemoveFromCartLambdaRole:
+    Type: AWS::IAM::Role
+    Description: Role for 'Remove from Cart' Lambda Function
+    Properties:
+      RoleName: RemoveFromCartLambdaRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess
+        - arn:aws:iam::aws:policy/AmazonOpenSearchServiceFullAccess
+
+  RemoveFromCartLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          const AWS = require("aws-sdk");
+          AWS.config.update({
+            region: "us-west-2", //insert your region e.g. us-west-1
+          });
+          const db = new AWS.DynamoDB.DocumentClient();
+          exports.handler = async (event) => {
+            console.log("Event:", event);
+            let response = {};
+            try {
+              let reqBody = JSON.parse(event.body);
+              console.log('request body',reqBody);
+              let UserID = reqBody.UserID;
+              let productId = reqBody.productId ;
+              let params = {
+                TableName: "CartDetails", //insert your table name where cart details are stored
+                Key: {
+                  UserID
+                },
+              };
+              let doc = await db.get(params).promise();
+              console.log(doc);
+              let cartItems = new Array();
+              if (doc) {
+                cartItems = doc.Item.Products;
+              }
+              
+              console.log('CartItems', cartItems);
+              let index = cartItems.indexOf(productId);
+              if (index > -1) {
+                cartItems.splice(index, 1);
+              }
+              
+              console.log('CartItems', cartItems);
+              let updateParams = {
+                TableName: "CartDetails", 
+                Key: {
+                  UserID: UserID,
+                },
+                UpdateExpression: "set Products = :t",
+                
+                ExpressionAttributeValues: {
+                  ":t": cartItems,
+                },
+              };
+              console.log(updateParams);
+              await db.update(updateParams).promise();
+              response = {
+                statusCode: 200,
+                headers: {
+                  "Access-Control-Allow-Origin": "*",
+                },
+                body: "Successful",
+              };
+            }
+            catch (error) {
+              console.log(error);
+              response = {
+                statusCode: 500,
+                headers: {
+                  "Access-Control-Allow-Origin": "*",
+                },
+                body: JSON.stringify(error),
+              };
+            }
+            return response;
+          }; 
+      Description: To remove items from the cart i.e., CartDetails table
+      FunctionName: RemoveFromCartLambda
+      Handler: index.handler
+      MemorySize: 256
+      Role: !GetAtt RemoveFromCartLambdaRole.Arn
+      Runtime: nodejs12.x
+      Timeout: 60
+
+  LambdaInvokePermissionRemoveFromCart:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref RemoveFromCartLambda
+      Action: "lambda:InvokeFunction"
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/*/POST/removefromcart"
+
+  GetCartLambdaRole:
+    Type: AWS::IAM::Role
+    Description: Role for Get Cart Lambda Function
+    Properties:
+      RoleName: GetCartLambdaRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess
+
+  GetCartLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          from boto3.dynamodb.conditions import Key
+          # def authheader
+
+          def lambda_handler(event, context):
+            client = boto3.resource('dynamodb')
+            table = client.Table('CartDetails')
+
+
+            res = table.get_item(
+              Key={
+                'UserID': event["queryStringParameters"]['UserId'],
+              }
+            )
+            print(res['Item'])
+            table = client.Table('ProductDatabase')
+            result = []
+            for i  in res['Item']['Products']:
+              
+              print('log',i)
+              response = table.get_item(
+                Key={
+                  'ID': i,
+                }
+              )
+              result.append(response['Item'])	
+            print(result) 
+            return {
+                  "statusCode": 200,
+                  "headers": {
+                      "Access-Control-Allow-Origin": '*',
+                      "Content-Type": "application/json"
+
+                  },
+                  "isBase64Encoded": False,
+                  "body": json.dumps({
+                      "items": result
+                  })
+              }
+      Description: To get items from the CartDetails dynamoDb table
+      FunctionName: GetCartLambda
+      Handler: index.lambda_handler
+      MemorySize: 256
+      Role: !GetAtt GetCartLambdaRole.Arn
+      Runtime: python3.9
+      Timeout: 60
+
+  LambdaInvokePermissionGetCart:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref GetCartLambda
+      Action: "lambda:InvokeFunction"
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/*/GET/getcart"
+
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties: 
+      AccountRecoverySetting: 
+        RecoveryMechanisms: 
+          - Name: verified_email
+            Priority: 1
+          - Name: verified_phone_number
+            Priority: 2
+      AutoVerifiedAttributes: 
+        - email
+      Policies: 
+          PasswordPolicy: 
+            MinimumLength: 8
+            RequireLowercase: true
+            RequireNumbers: true
+            RequireSymbols: true
+            RequireUppercase: true
+            TemporaryPasswordValidityDays: 7
+      Schema: 
+        - Name: email
+          Required: true
+          Mutable: true
+        - Name: name
+          Required: true
+          Mutable: true
+      UsernameAttributes: 
+        - email
+      UsernameConfiguration: 
+          CaseSensitive: false
+      UserPoolName: userpool
+      VerificationMessageTemplate: 
+          DefaultEmailOption: CONFIRM_WITH_LINK
+
+  CognitoAppClient:  
+    Type: AWS::Cognito::UserPoolClient
+    Properties: 
+      AccessTokenValidity: 1
+      AllowedOAuthFlows: 
+        - code
+      AllowedOAuthScopes: 
+        - phone
+        - email
+        - openid
+        - profile
+        - aws.cognito.signin.user.admin
+      CallbackURLs: 
+        - https://<your cloudfront domain name>.net/profile.html
+      ClientName: appclient
+      EnableTokenRevocation: true
+      ExplicitAuthFlows: 
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      IdTokenValidity: 1
+      PreventUserExistenceErrors: ENABLED
+      RefreshTokenValidity: 30
+      SupportedIdentityProviders: 
+        - COGNITO
+      UserPoolId: !Ref CognitoUserPool
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties: 
+      Domain: userpooldomain
+      UserPoolId: !Ref CognitoUserPool
