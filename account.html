@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account-OnlineShopping</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="images/favicon.png"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@200&display=swap" rel="stylesheet"> 
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+    <script></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="js/amazon-cognito-auth.min.js"></script>
+
+    <script src="https://rawgit.com/aws/amazon-cognito-identity-js/master/dist/aws-cognito-sdk.min.js"></script> 
+    <script src="https://rawgit.com/aws/amazon-cognito-identity-js/master/dist/amazon-cognito-identity.min.js"></script> 
+    <script src="js/config.js"></script> 
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="navbar">
+            <div class="logo">
+                <a href="index.html"><img src="images/logo1.png" width="125px"></a>
+            </div>
+            <nav>
+                <ul id="MenuItems">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="products.html">Products</a></li>
+                    <li><a href="account.html">Account</a></li>
+                    <li id="logoutButton"></li>
+                    <li><span onclick="login()">Login</span></li>
+                    
+                </ul>
+            </nav>
+            <a href="cart.html"><img src="images/cart.png" width="30px height=" 30px alt=""></a>
+            <img src="images/menu.png" class="menu-icon" onclick="menutoggle()">
+        </div>
+    </div>
+
+    <!-- account page item details-->
+    <div class="account-page">
+        <div class="container">
+            <div class="row">
+                <div class="col-2">
+                    <img src="images/main1.png" width="100%">
+                </div>
+                <div class="col-2">
+                    <div class="form-container">
+                        <div class="form-btn">
+                            <span onclick="login()">Login</span>
+                            <span onclick="register()">Register</span>
+                            <hr id="Indicator">
+                        </div>
+                        <form id="RegisterForm">
+                            <p style="color: #ff523b;" id="titleheader"> </p>
+
+                            <input type="personalname" class="form-control" id="personalnameRegister" placeholder="Name"
+                                pattern=".*" required>
+                            <input type="email" class="form-control" id="emailInputRegister" placeholder="Email"
+                                pattern=".*" required>
+                            <input type="password" class="form-control" id="passwordInputRegister"
+                                placeholder="Password" pattern=".*" required>
+                            <input type="password" class="form-control" id="password2InputRegister"
+                                placeholder="Confirm Password" pattern=".*" required>
+                            <button id="mainbutton" class="btn btn-lg btn-primary btn-block" type="button"
+                                onclick="registerButton()">Register</button>
+                        </form>
+                        <form id="LoginForm">
+                            <input type="text" class="form-control" id="inputUsername" placeholder="Email address"
+                                name="username" required>
+                            <input type="password" class="form-control" id="inputPassword" placeholder="Password"
+                                name="password" pattern=".*" required>
+                            <button id="mainbutton" class="btn btn-lg btn-primary btn-block" type="button"
+                                onclick="signInButton()">Sign In</button>
+                            <a href="">Forgot Password</a>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!----js for toggle menu--->
+    <script>
+        var MenuItems = document.getElementById("MenuItems");
+        MenuItems.style.maxHeight = "0px";
+        function menutoggle() {
+            if (MenuItems.style.maxHeight == "0px") {
+                MenuItems.style.maxHeight = "200px"
+            }
+            else {
+                MenuItems.style.maxHeight = "0px"
+            }
+        }
+    </script>
+
+    <!----js for toggle menu--->
+    <script>
+        var LoginForm = document.getElementById("LoginForm");
+        var RegisterForm = document.getElementById("RegisterForm");
+        var Indicator = document.getElementById("Indicator");
+
+        function register() {
+            RegisterForm.style.transform = "translateX(0px)";
+            LoginForm.style.transform = "translateX(0px)"
+            Indicator.style.transform = "translateX(100px)"
+
+        }
+        function login() {
+            RegisterForm.style.transform = "translateX(300px)";
+            LoginForm.style.transform = "translateX(300px)"
+            Indicator.style.transform = "translateX(0px)"
+
+        }
+
+        var username;
+        var personalname;
+        var password;
+        var poolData;
+
+        function registerButton() {
+            personalnamename = document.getElementById("personalnameRegister").value;
+            username = document.getElementById("emailInputRegister").value;
+
+            if (document.getElementById("passwordInputRegister").value != document.getElementById("password2InputRegister").value) {
+                alert("Passwords do no match!")
+                throw "Passwords do no match!"
+            } else {
+                password = document.getElementById("passwordInputRegister").value;
+            }
+
+            poolData = {
+                UserPoolId: _config.cognito.userPoolId,
+                ClientId: _config.cognito.clientId
+            }
+
+            var userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+
+            var attributeList = [];
+
+            var dataEmail = {
+                Name: 'email',
+                Value: username,
+            };
+
+            var dataPersonalName = {
+                Name: 'name',
+                Value: personalname,
+            };
+
+            var attributeEmail = new AmazonCognitoIdentity.CognitoUserAttribute(dataEmail);
+            var attributePersonalName = new AmazonCognitoIdentity.CognitoUserAttribute(dataPersonalName);
+
+            attributeList.push(attributeEmail);
+            attributeList.push(attributePersonalName);
+
+            userPool.signUp(username, password, attributeList, null, function (err, result) {
+                if (err) {
+                    alert(err.message || JSON.stringify(err));
+                    return;
+                }
+                cognitoUser = result.user;
+                console.log('user name is ' + cognitoUser.getUsername());
+                document.getElementById("titleheader").innerHTML = "Check email for Verification"
+            });
+        }
+
+        function signInButton() {
+
+            var authenticationData = {
+                Username: document.getElementById("inputUsername").value,
+                Password: document.getElementById("inputPassword").value,
+            };
+            var authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(authenticationData);
+
+            var poolData = {
+                UserPoolId: _config.cognito.userPoolId,
+                ClientId: _config.cognito.clientId
+            };
+
+            var userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+
+            var userData = {
+                Username: document.getElementById("inputUsername").value,
+                Pool: userPool,
+            };
+
+            var cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+
+            cognitoUser.authenticateUser(authenticationDetails, {
+                onSuccess: function (result) {
+                    var accessToken = result.getAccessToken().getJwtToken();
+                    console.log(accessToken);
+                    window.localStorage.setItem('email', document.getElementById("inputUsername").value)
+                    
+                    window.location.href = '/profile.html'
+                },
+                onFailure: function (err) {
+                    alert(err.message || JSON.stringify(err));
+                },
+            });
+        }
+   
+    </script>
+   
+</body>
+</html>
