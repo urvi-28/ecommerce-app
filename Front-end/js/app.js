@@ -196,7 +196,7 @@ var cognitoUser = userPool.getCurrentUser();
 async function fetchData() {
   console.log("Fetch Data executed");
   let query = document.getElementById("searchInput").value;
-  let url = `<enter search api url>?q=${query}`; //enter search api url 
+  let url = `<enter the search api url>?q=${query}`; // enter the search api url
   axios(url, {
     method: "GET",
     headers: {
@@ -261,7 +261,7 @@ window.addEventListener('load', fetchProducts, false);
 
         async function fetchProducts() {
             console.log("Fetch Products executed");
-            let url = ``; //enter product catalog api url
+            let url = ``; //enter 'get products' api url
             axios(url, {
                 method: "GET",
                 headers: {
@@ -312,7 +312,7 @@ window.addEventListener('load', fetchProducts, false);
 
 async function addtocart() {
   let url =
-    ""; //enter add to cart api url
+    " "; // enter add to cart api url
   axios(url, {
     method: "GET",
     headers: {

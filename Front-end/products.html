@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products-OnlineShopping</title>
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="images/favicon.png" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@200&display=swap" rel="stylesheet"> 
+    <link rel="icon" type="image/png" href="images/favicon.png" />
+
+    <script></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1148.0.min.js"></script>
+    <script src="js/amazon-cognito-auth.min.js"></script>
+    <script src="https://rawgit.com/aws/amazon-cognito-identity-js/master/dist/aws-cognito-sdk.min.js"></script>
+    <script src="https://rawgit.com/aws/amazon-cognito-identity-js/master/dist/amazon-cognito-identity.min.js"></script>
+    <script type="text/javascript" src="js/app.js" defer></script>
+    <script src="js/config.js"></script>
+    
+    <script>
+        window.addEventListener('load', fetchProducts, false);
+        function generateStringFromArray(arr) {
+            let str = "";
+            arr.forEach((a) => {
+                str += `${a.S} `;
+            });
+            return str;
+        }
+
+        async function addToCart(productId) {
+            let url = '' //enter the add to cart api url
+            console.log({url})
+            console.log('request body',{
+                    UserID: window.localStorage.getItem("email"),
+                    productId: productId
+                })
+            
+            axios.post(url, {
+                UserID : window.localStorage.getItem("email"),
+                productId : productId.toString()
+            })
+            .then((res) => {
+                console.log("Response: ", res)
+            })
+            .catch((err) => {
+                console.log("Error: ", err)
+            })
+        }
+
+        async function fetchProducts() {
+            console.log("Fetch Products executed");
+            let url = ``; //enter the product catalog api url
+            axios(url, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            })
+                .then((response) => {
+                    let data = response.data
+                    console.log(data)
+                    let productDiv = document.getElementById("productList");
+                    let ht = ``;
+                    data.forEach((product) => {
+                        ht += ` <div class="col-4">
+                    <img src=${product.Image_url} alt="" />
+                            <h4>${product.Name
+                                ? product.Name
+                                : "Not Available"
+                            }</h4>
+                            <div class="rating">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="far fa-star"></i>
+                            </div>
+                        <p>${product.Color
+                                ? product.Color
+                                : product.Color
+                                    ? generateStringFromArray(product.Color)
+                                    : "Not Available"
+                            }</p>
+                            <p>${product.Price}</p>
+                            <button onClick=addToCart(${product.ID})
+                             class="btn">Add to Cart</button>
+                    </div>`;
+                    });
+                    productDiv.innerHTML = ht;
+                    localStorage.setItem('data', JSON.stringify(data));
+                    localStorage.getItem('data')
+                })
+                .catch((error) => {
+                    console.log(error);
+                    console.log("This is the error block");
+                });
+        } 
+    </script>
+</head>
+
+<body onload="ScanProducts()">
+    <div class="container">
+        <div class="navbar">
+            <div class="logo">
+                <a href="index.html"><img src="images/logo1.png" width="125px"></a>
+            </div>
+            <li class="searchbar">
+                <input type="text" class="form-control" placeholder="Search here..." id="searchInput"
+                    name="searchInput">
+                <button class="bar" onClick="fetchData()"> <i class="fa fa-search" aria-hidden="true"> </i></button>
+            </li>
+            <nav>
+                <ul id="MenuItems">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="products.html">Products</a></li>
+                    <li><a href="account.html">Account</a></li>
+                    <li id="logoutButton"></li>
+                    <li id="loginButton" onclick="login()"><a href="account.html">Login</a></li>
+                </ul>
+            </nav>
+            <a href="cart.html"><img src="images/cart.png" width="30px height=" 30px alt=""></a>
+            <img src="images/menu.png" class="menu-icon" onclick="menutoggle()">
+        </div>
+    </div>
+
+    <!-----  products ----->
+
+    <div class="small-container">
+        <div class="row row-2">
+            <h2>All Products</h2>
+            <select>
+                <option>Sort By Price</option>
+                <option>Sort By Popularity</option>
+                <option>Sort By Rating</option>
+                <option>Sort By Price</option>
+            </select>
+            </div>
+        <div class="row" id="productList">
+        </div>
+        <div class="page-btn">
+            <span>1</span>
+            <span>2</span>
+            <span>3</span>
+            <span>4</span>
+        </div>
+        <script></script>
+</body>
+</html>

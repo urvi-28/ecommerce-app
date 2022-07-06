@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart-OnlineShopping</title>
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@200&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="images/favicon.png" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+   
+    <script></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1148.0.min.js"></script>
+    <script src="js/amazon-cognito-auth.min.js"></script>
+    <script src="https://rawgit.com/aws/amazon-cognito-identity-js/master/dist/aws-cognito-sdk.min.js"></script>
+    <script src="https://rawgit.com/aws/amazon-cognito-identity-js/master/dist/amazon-cognito-identity.min.js"></script>
+    <script type="text/javascript" src="js/app.js" defer></script>
+    <script src="js/config.js"></script>
+    <script>
+
+        window.addEventListener('load', fetchCart, false);
+        async function RemoveFromCart(productId)  {
+            console.log("Remove Products executed");
+            let url = '' //enter remove from cart api url
+            axios
+                .post(url, {
+                    UserID: window.localStorage.getItem('email'),
+                    productId: productId.toString(),
+                })
+                .then((res) => {
+                    console.log(res);
+                    window.location.reload();
+                })
+                .catch((error) => {
+                    console.log(error);
+                    console.log("This is the error block");
+                });
+        };
+        async function fetchCart() {
+            console.log("Fetch Products executed");
+            let UserId = window.localStorage.getItem('email')
+            let url = `<enter get item api url>?UserId=${UserId}`;
+            axios(url, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            })
+                .then((response) => {
+                    console.log(response)
+                    let data = response.data
+                    let total = 0
+
+                    console.log(data.items)
+                    let cartTable = document.getElementById("cart-table")
+                    let itemString = `          <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Subtotal</th>
+                </tr>`
+                    data.items.forEach((item) => {
+                        total += parseInt(item.Price.split(' ')[1])
+                        itemString += 
+                `<tr>
+                <td>
+                    <div class="cart-info">
+                        <img src="${item.Image_url}">
+                        <div>
+                            <p>${item.Name}</p>
+                            <small class="price">Price: ${item.Price}</small>
+                            <a href="#" onclick="RemoveFromCart(${item.ID})">Remove</a>
+                        </div>
+                    </div>
+                </td>
+                <td><input type="number" value="1"></td>
+                <td>${item.Price}</td>
+            </tr>`
+                    })
+                    cartTable.innerHTML = itemString
+
+                    let totalTag = document.getElementById("total")
+                    totalTag.innerText = `Rs. ${total}`
+
+                })
+                .catch((error) => {
+                    console.log(error);
+                    console.log("This is the error block");
+                });
+        }
+    </script>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="navbar">
+            <div class="logo">
+                <a href="index.html"><img src="images/logo1.png" width="125px"></a>
+            </div>
+            <nav>
+                <ul id="MenuItems">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="products.html">Products</a></li>
+                    <li><a href="account.html">Account</a></li>
+                    <li id="logoutButton"></li>
+                    <li id="loginButton" onclick="login()"><a href="account.html">Login</a></li>
+                </ul>
+            </nav>
+            <a href="cart.html"><img src="images/cart.png" width="30px height=" 30px alt=""></a>
+            <img src="images/menu.png" class="menu-icon" onclick="menutoggle()">
+        </div>
+    </div>
+    <!-- cart item details-->
+    <div class="small-container cart-page">
+        <table id="cart-table">
+            <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Subtotal</th>
+            </tr>
+
+        </table>
+        <div class="total-price">
+            <table>
+                <tr>
+                    <td>Total</td>
+                    <td id="total">Rs.</td>
+                </tr>
+                <tr><td><button class="btn">Checkout</button></td></tr>
+            </table>
+        </div>
+    </div>
+    <!----js for toggle menu--->
+    <script>
+        var MenuItems = document.getElementById("MenuItems");
+        MenuItems.style.maxHeight = "0px";
+        function menutoggle() {
+            if (MenuItems.style.maxHeight == "0px") {
+                MenuItems.style.maxHeight = "200px"
+            }
+            else {
+                MenuItems.style.maxHeight = "0px"
+            }
+        }
+    </script>
+
+
+</body>
+
+</html>
