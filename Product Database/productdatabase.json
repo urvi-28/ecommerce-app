@@ -1,0 +1,19 @@
+{"ID": "1","Category": "Tshirt","Color": ["Pink"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/T1.jpg","Name": "Nike Tshirt","Price": "Rs. 900"}
+{"ID": "2","Category": "Tshirt","Color": ["yellow"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/T2.jpg","Name": "Adidas Tshirt","Price": "Rs. 1100"}
+{"ID": "3","Category": "Tshirt","Color": ["green"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/T3.jpg","Name": "Mens Tshirt","Price": "Rs. 550"}
+{"ID": "4","Category": "Tshirt","Color": ["pink"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/T4.jpg","Name": "Pink Tshirt","Price": "Rs. 499"}
+{"ID": "5","Category": "Tshirt","Color": ["yellow"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/T5.jpg","Name": "Yellow Tshirt","Price": "Rs. 700"}
+{"ID": "6","Category": "Tshirt","Color": ["green"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/T6.jpg","Name": "Adidas Printed Tshirt","Price": "Rs. 400"}
+{"ID": "7","Category": "Watch","Color": ["chrome","blue"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/W1.jpg","Name": "Fossil Mens Watch","Price": "Rs. 5000"}
+{"ID": "8","Category": "Watch","Color": ["black"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/W2.jpg","Name": "Noise Smart Watch","Price": "Rs. 2200"}
+{"ID": "9","Category": "Watch","Color": ["chrome","rose gold"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/W3.jpg","Name": "Fossil Womens Watch","Price": "Rs. 4800"}
+{"ID": "10","Category": "Shoes","Color": ["red"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/S1.jpg","Name": "Mens Nike Shoes","Price": "Rs. 2500"}
+{"ID": "11","Category": "Shoes","Color": ["black"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/S2.jpg","Name": "Mens Formal Shoes","Price": "Rs. 2000"}
+{"ID": "12","Category": "Shoes","Color": ["pink"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/S3.jpg","Name": "Women Flat Shoes","Price": "Rs. 1299"}
+{"ID": "13","Category": "Shoes","Color": ["black"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/S4.jpg","Name": "Puma Shoes","Price": "Rs. 2400"}
+{"ID": "14","Category": "Shoes","Color": ["grey","pink"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/S5.jpg","Name": "Skechers Shoes","Price": "Rs. 3000"}
+{"ID": "15","Category": "Shoes","Color": ["black"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/S6.jpg","Name": "Black Heels","Price": "Rs. 1800"}
+{"ID": "16","Category": "Accessories","Color": ["white","pink"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/A1.jpg","Name": "Womens Scarf","Price": "Rs. 325"}
+{"ID": "17","Category": "Accessories","Color": ["white","pink"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/A2.jpg","Name": "Silk Scarf","Price": "Rs. 255"}
+{"ID": "18","Category": "Accessories","Color": ["blue"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/A3.jpg","Name": "Blue Scarf","Price": "Rs. 300"}
+{"ID": "19","Category": "Accessories","Color": ["blue"],"Image_url": "https://<enter your cloudfront domain name>.cloudfront.net/images/A4.jpg","Name": "Silk Scarf","Price": "Rs. 800"}
